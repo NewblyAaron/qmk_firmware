@@ -58,3 +58,65 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
      KC_TRNS,  GU_TOGG,  KC_TRNS,                                KC_TRNS,                                KC_TRNS,  GU_TOGG,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS)
 
 };
+
+// ADD THE RGB FUNCTION HERE - after your keymaps, before any other functions
+bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
+    uint8_t current_layer = get_highest_layer(layer_state);
+    
+    // Check if GUI keys are disabled (GU_TOGG toggles GUI key functionality)
+    bool gui_disabled = keymap_config.no_gui;
+    
+    // Check if NKRO is enabled (NK_TOGG toggles N-key rollover)
+    bool nkro_enabled = keymap_config.nkro;
+    
+    // Light up top-right key if GUI is disabled
+    if (gui_disabled) {
+        // Top-right position: row 0, column 16 (0-indexed for 6x17 matrix)
+        uint8_t gui_indicator_index = g_led_config.matrix_co[0][16];
+        if (gui_indicator_index >= led_min && gui_indicator_index < led_max && gui_indicator_index != NO_LED) {
+            rgb_matrix_set_color(gui_indicator_index, 255, 0, 0); // Red for GUI disabled
+        }
+    }
+    
+    // Light up another key if NKRO is enabled (maybe top-right minus one?)
+    if (nkro_enabled) {
+        // Position: row 0, column 15 (second from top-right)
+        uint8_t nkro_indicator_index = g_led_config.matrix_co[0][15];
+        if (nkro_indicator_index >= led_min && nkro_indicator_index < led_max && nkro_indicator_index != NO_LED) {
+            rgb_matrix_set_color(nkro_indicator_index, 0, 255, 0); // Green for NKRO enabled
+        }
+    }
+    
+    // Only activate layer RGB effects on function layers
+    if (current_layer == MAC_FN || current_layer == WIN_FN) {
+        RGB color;
+        
+        // Different colors for each function layer
+        if (current_layer == MAC_FN) {
+            color = (RGB){200, 200, 200};  // Apple silver/white for Mac function layer
+        } else { // WIN_FN
+            color = (RGB){0, 120, 215};    // Windows blue for Windows function layer
+        }
+        
+        for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
+            for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
+                uint8_t index = g_led_config.matrix_co[row][col];
+                
+                if (index >= led_min && index < led_max && index != NO_LED) {
+                    uint16_t keycode = keymap_key_to_keycode(current_layer, (keypos_t){col, row});
+                    
+                    // Light up keys that are defined on this layer (not transparent)
+                    if (keycode > KC_TRNS) {
+                        // Don't override the GUI or NKRO indicators if they're already set
+                        if (!(gui_disabled && row == 0 && col == 16) && 
+                            !(nkro_enabled && row == 0 && col == 15)) {
+                            rgb_matrix_set_color(index, color.r, color.g, color.b);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return false;
+}
