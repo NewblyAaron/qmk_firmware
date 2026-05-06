@@ -1,16 +1,10 @@
 {
-    "eeprom": {
-        "wear_leveling": {
-            "backing_size": 4096
-        }
+    "usb": {
+        "pid": "0x0280",
+        "device_version": "1.1.0"
     },
-    "dip_switch": {
-        "matrix_grid": [
-            [
-                5,
-                5
-            ]
-        ]
+    "features": {
+        "rgb_matrix": true
     },
     "rgb_matrix": {
         "driver": "snled27351",
